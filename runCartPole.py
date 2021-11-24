@@ -5,12 +5,13 @@ from tensorflow import keras
 
 nInputs = 4 # == env.observation_space.shape[0]
 
+
+_bRender = False
+
 model = keras.models.Sequential([
     keras.layers.Dense(5, activation="elu", input_shape=[nInputs]),
     keras.layers.Dense(1, activation="sigmoid"),
 ])
-
-_bRender = True
 
 def basicPolicy(obs):
     angle = obs[2]
@@ -41,14 +42,15 @@ def playMultipleEpisodes(env, nEpisodes, nMaxSteps, model, lossFn, bRender):
             if (bRender):
                 env.render()
             if done:
+                nlist.append(step)
+                # print(step)
                 break
 
-            
-
+        # stats = np.mean(currentRewards), np.std(currentRewards), np.min(currentRewards), np.max(currentRewards)    
+        # print(stats)
         allRewards.append(currentRewards)
         allGrads.append(currentGrads)
 
-    # stats = np.mean(allRewards), np.std(allRewards), np.min(allRewards), np.max(allRewards)    
     return allRewards, allGrads
 
 def discountRewards(rewards, discountFactor):
@@ -68,11 +70,13 @@ def discountAndNormalizeRewards(allRewards, discountFactor):
 
 nIterations = 150
 nEpisodesPerUpdate = 10
-nMaxSteps = 200
+nMaxSteps = 500
 discountFactor = 0.95
 
 optimizer = keras.optimizers.Adam(lr=0.01)
 lossFn = keras.losses.binary_crossentropy
+
+nlist = []
 
 env = gym.make("CartPole-v1")
 
@@ -91,21 +95,4 @@ for iteration in range(nIterations):
     optimizer.apply_gradients(zip(allMeanGrads, model.trainable_variables))
     # print(allMeanGrads)
 
-# totals = []
-# for episode in range(500):
-#     episodeRewards = 0
-#     obs = env.reset()
-#     for step in range(200):
-#         action = basicPolicy(obs)
-#         obs, reward, done, info = playOneStep(env, obs, model, ) #env.step(action)
-#         if (_bRender):
-#             env.render()
-#         episodeRewards += reward
-#         if done:
-#             # print("CartPole finished after", step, "steps.")
-#             break
-
-#     totals.append(episodeRewards)
-
-# stats = np.mean(totals), np.std(totals), np.min(totals), np.max(totals)
-# print(stats)
+print(np.max(nlist))
